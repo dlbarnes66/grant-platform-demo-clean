@@ -36,3 +36,7 @@ worker.on("completed", (job) => {
 worker.on("failed", (job, err) => {
   console.error(`Worker failed job ${job.id}:`, err);
 });
+// Keep worker alive on Railway
+setInterval(() => {}, 1000);
+
+
