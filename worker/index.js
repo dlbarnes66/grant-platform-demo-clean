@@ -1,53 +1,38 @@
-import pkg from "bullmq";
-const { Worker, QueueScheduler } = pkg;
+import { Worker, Queue, QueueEvents } from "bullmq";
+import { connection } from "../shared/redis.js";
 
-import IORedis from "ioredis";
+const queueName = "grantQueue";
 
-const connection = new IORedis(process.env.REDIS_URL);
+// Create the queue
+export const grantQueue = new Queue(queueName, { connection });
 
-// Ensures jobs are processed even if worker restarts
-new QueueScheduler("grantQueue", { connection });
+// Queue events (replaces QueueScheduler in BullMQ v5)
+const queueEvents = new QueueEvents(queueName, { connection });
+queueEvents.on("completed", ({ jobId }) => {
+  console.log(`Job ${jobId} completed`);
+});
+queueEvents.on("failed", ({ jobId, failedReason }) => {
+  console.error(`Job ${jobId} failed: ${failedReason}`);
+});
 
-console.log("Worker started. Listening for grantSearch jobs...");
-
+// Worker processor
 const worker = new Worker(
-  "grantQueue",
+  queueName,
   async (job) => {
-    console.log("Processing job:", job.id);
+    console.log("Processing job:", job.id, job.data);
 
-    if (job.name === "grantSearch") {
-      const { keywords, location, category } = job.data;
+    // Simulate work
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Simulated grant search logic
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const results = [
-        {
-          title: "Community Impact Grant",
-          amount: "$10,000",
-          deadline: "2025-12-01",
-          match: `${keywords} - ${location}`,
-        },
-        {
-          title: "Innovation Support Fund",
-          amount: "$25,000",
-          deadline: "2025-11-15",
-          match: `${keywords} - ${category}`,
-        },
-      ];
-
-      return { results };
-    }
-
-    return { message: "Unknown job type" };
+    return { status: "done", jobId: job.id };
   },
   { connection }
 );
 
 worker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed`);
+  console.log(`Worker completed job ${job.id}`);
 });
 
 worker.on("failed", (job, err) => {
-  console.error(`Job ${job.id} failed:`, err);
+  console.error(`Worker failed job ${job.id}:`, err);
 });
