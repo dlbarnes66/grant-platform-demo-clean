@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { grantQueue } from "../../../../worker/queue.js";
+import { grantQueue } from "@/worker/queue";   // ⭐ Correct import
 import { NextResponse } from "next/server";
 
 export async function POST(req, { params }) {
