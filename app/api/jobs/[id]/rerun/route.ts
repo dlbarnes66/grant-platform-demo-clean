@@ -5,16 +5,12 @@ import { NextResponse } from "next/server";
 export async function POST(req, { params }) {
   const { id } = params;
 
-  // 1. Load the original job
   const job = await prisma.job.findUnique({
     where: { id },
   });
 
   if (!job) {
-    return NextResponse.json(
-      { error: "Job not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Job not found" }, { status: 404 });
   }
 
   if (!job.input) {
@@ -24,7 +20,6 @@ export async function POST(req, { params }) {
     );
   }
 
-  // 2. Create a new job with the same input
   const newJob = await prisma.job.create({
     data: {
       text: job.text,
@@ -33,13 +28,11 @@ export async function POST(req, { params }) {
     },
   });
 
-  // 3. Enqueue the new job
   await grantQueue.add("process", {
     id: newJob.id,
     input: job.input,
   });
 
-  // 4. Return the new job ID
   return NextResponse.json({
     success: true,
     newJobId: newJob.id,
