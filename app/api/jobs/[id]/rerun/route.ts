@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { grantQueue } from "@/worker/queue";   // ⭐ Correct import
+import { grantQueue } from "../../../../queue";
 import { NextResponse } from "next/server";
 
 export async function POST(req, { params }) {
@@ -28,7 +28,7 @@ export async function POST(req, { params }) {
   const newJob = await prisma.job.create({
     data: {
       text: job.text,
-      input: job.input,     // ⭐ reuse original input
+      input: job.input,
       status: "queued",
     },
   });
@@ -36,7 +36,7 @@ export async function POST(req, { params }) {
   // 3. Enqueue the new job
   await grantQueue.add("process", {
     id: newJob.id,
-    input: job.input,       // ⭐ send same input to worker
+    input: job.input,
   });
 
   // 4. Return the new job ID
