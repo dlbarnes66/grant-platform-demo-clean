@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import Link from "next/link";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
@@ -23,11 +24,12 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-6 py-10">
+    <div className="min-h-screen bg-gray-100 px-6 py-12">
       <div className="max-w-5xl mx-auto">
+
         {/* Page Title */}
         <h1 className="text-3xl font-bold text-gray-900">Grant Search</h1>
-        <p className="text-gray-600 mt-2">
+        <p className="text-muted mt-2">
           Search for grants and explore opportunities that match your mission.
         </p>
 
@@ -38,12 +40,13 @@ export default function SearchPage() {
             placeholder="Search grants…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 p-4 border rounded-lg bg-white shadow-sm"
+            className="input flex-1"
           />
+
           <button
             onClick={runSearch}
             disabled={loading}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition"
+            className="btn btn-primary"
           >
             {loading ? "Searching…" : "Search"}
           </button>
@@ -56,15 +59,13 @@ export default function SearchPage() {
           )}
 
           {!loading && results.length === 0 && (
-            <p className="text-gray-500 mt-4">No results yet. Try a search.</p>
+            <p className="text-muted mt-4">No results yet. Try a search.</p>
           )}
 
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {results.map((grant) => (
-              <div
-                key={grant.id}
-                className="bg-white border rounded-xl shadow-sm p-6 hover:shadow-md transition"
-              >
+              <div key={grant.id} className="card hover-card">
+
                 {/* Title */}
                 <h2 className="text-lg font-semibold text-gray-900 leading-tight">
                   {grant.title}
@@ -72,7 +73,7 @@ export default function SearchPage() {
 
                 {/* Agency */}
                 {grant.agency && (
-                  <p className="text-sm text-gray-600 mt-1">{grant.agency}</p>
+                  <p className="text-sm text-muted mt-1">{grant.agency}</p>
                 )}
 
                 {/* Metadata */}
@@ -97,12 +98,12 @@ export default function SearchPage() {
                 </p>
 
                 {/* View Details Button */}
-                <button
-                  onClick={() => (window.location.href = `/grants/${grant.id}`)}
-                  className="mt-6 w-full px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition"
+                <Link
+                  href={`/grants/${grant.id}`}
+                  className="btn btn-success mt-6 w-full text-center"
                 >
                   View Details
-                </button>
+                </Link>
               </div>
             ))}
           </div>
@@ -110,9 +111,9 @@ export default function SearchPage() {
 
         {/* Back Link */}
         <div className="mt-10">
-          <a href="/" className="text-gray-600 underline">
+          <Link href="/" className="text-muted underline">
             ← Back to Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

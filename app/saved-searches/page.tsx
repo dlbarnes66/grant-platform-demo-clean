@@ -3,114 +3,94 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-interface SavedSearch {
-  id: string;
-  title: string;
-  createdAt: string;
-  filters: Record<string, any>;
-}
-
 export default function SavedSearchesPage() {
+  const [searches, setSearches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searches, setSearches] = useState<SavedSearch[]>([]);
 
-  const loadSearches = async () => {
-    try {
+  useEffect(() => {
+    const loadSaved = async () => {
       const res = await fetch("/api/saved-searches");
       const data = await res.json();
       setSearches(data || []);
-    } catch (err) {
-      console.error("Failed to load saved searches", err);
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    };
 
-  const deleteSearch = async (id: string) => {
-    await fetch(`/api/saved-searches/${id}`, { method: "DELETE" });
-    loadSearches();
-  };
-
-  useEffect(() => {
-    loadSearches();
+    loadSaved();
   }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-gray-600">
+      <div className="min-h-screen flex items-center justify-center text-lg text-muted">
         Loading saved searches…
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-semibold text-gray-900">Saved Searches</h1>
-        <p className="text-gray-600 mt-2">
-          Quickly access your previously saved grant searches.
+    <div className="min-h-screen bg-gray-100 px-6 py-12">
+      <div className="max-w-5xl mx-auto">
+
+        {/* Page Title */}
+        <h1 className="text-3xl font-bold text-gray-900">Saved Searches</h1>
+        <p className="text-muted mt-2">
+          Quickly re-run your previous searches or manage saved queries.
         </p>
 
         {/* Empty State */}
         {searches.length === 0 && (
-          <div className="mt-10 bg-white p-10 rounded-xl shadow border border-gray-200 text-center">
-            <p className="text-gray-600 text-lg">You haven’t saved any searches yet.</p>
-
-            <Link
-              href="/search"
-              className="inline-block mt-6 px-6 py-3 rounded-lg border border-yellow-400 text-yellow-600 bg-white hover:bg-yellow-50 transition"
-            >
-              Start a Search
+          <div className="card mt-10 text-center py-12">
+            <p className="text-muted text-lg">You haven’t saved any searches yet.</p>
+            <Link href="/search" className="btn btn-primary mt-6">
+              Search Grants
             </Link>
           </div>
         )}
 
-        {/* Saved Search List */}
-        <div className="mt-10 space-y-6">
+        {/* Saved Searches List */}
+        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {searches.map((search) => (
-            <div
-              key={search.id}
-              className="bg-white p-6 rounded-xl shadow border border-gray-200"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {search.title || "Untitled Search"}
-                  </h3>
-                  <p className="text-gray-500 text-sm mt-1">
-                    Saved on {new Date(search.createdAt).toLocaleDateString()}
-                  </p>
+            <div key={search.id} className="card hover-card">
 
-                  {/* Filters Summary */}
-                  <div className="mt-3 text-gray-700 text-sm">
-                    {Object.entries(search.filters).map(([key, value]) => (
-                      <p key={key}>
-                        <span className="font-medium capitalize">{key}:</span>{" "}
-                        {Array.isArray(value) ? value.join(", ") : value}
-                      </p>
-                    ))}
-                  </div>
-                </div>
+              {/* Query */}
+              <h2 className="text-lg font-semibold text-gray-900 leading-tight">
+                {search.query}
+              </h2>
 
-                {/* Delete Button */}
-                <button
-                  onClick={() => deleteSearch(search.id)}
-                  className="text-red-500 hover:text-red-700 text-sm"
-                >
-                  Delete
-                </button>
-              </div>
+              {/* Timestamp */}
+              <p className="text-muted text-sm mt-1">
+                Saved on {new Date(search.createdAt).toLocaleDateString()}
+              </p>
 
-              {/* View Results Button */}
-              <div className="mt-6">
+              {/* Buttons */}
+              <div className="mt-6 flex flex-col gap-3">
                 <Link
-                  href={`/search/results?id=${search.id}`}
-                  className="inline-block px-6 py-2 rounded-lg border border-yellow-400 text-yellow-600 bg-white hover:bg-yellow-50 transition"
+                  href={`/search?query=${encodeURIComponent(search.query)}`}
+                  className="btn btn-success w-full text-center"
                 >
-                  View Results
+                  Run Search
                 </Link>
+
+                <button
+                  onClick={async () => {
+                    await fetch(`/api/saved-searches/${search.id}`, {
+                      method: "DELETE",
+                    });
+                    setSearches((prev) => prev.filter((s) => s.id !== search.id));
+                  }}
+                  className="btn btn-danger w-full"
+                >
+                  Remove
+                </button>
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Back Link */}
+        <div className="mt-12">
+          <Link href="/search" className="text-muted underline">
+            ← Back to Search
+          </Link>
         </div>
       </div>
     </div>
