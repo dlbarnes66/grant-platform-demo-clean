@@ -2,53 +2,45 @@
 
 import { useEffect, useState } from "react";
 
-// Temporary replacement for missing ProfileSection component
-function ProfileSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white p-6 rounded-lg shadow mb-8">
-      <h2 className="text-xl font-semibold mb-2">{title}</h2>
-      {description && (
-        <p className="text-gray-600 text-sm mb-4">{description}</p>
-      )}
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
-  async function loadProfile() {
-    const res = await fetch("/api/profile", { credentials: "include" });
-    const data = await res.json();
-    setProfile(data);
-    setLoading(false);
-  }
+  const [profile, setProfile] = useState({
+    basics: { name: "", type: "", website: "", ein: "" },
+    location: { state: "", county: "" },
+    mission: { category: "", focusAreas: [] as string[] },
+    capacity: { staffSize: "", annualBudget: "", readiness: "", pastGrants: "" },
+    funding: { amount: "", purpose: "", timeline: "", urgency: "" },
+    eligibility: {
+      populations: [] as string[],
+      orgType: "",
+      geoEligibility: "",
+      restrictions: ""
+    }
+  });
 
-  async function saveSection(endpoint: string, data: any) {
-    setSaving(true);
-    await fetch(`/api/profile/sections/${endpoint}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(data),
-    });
-    setSaving(false);
-  }
-
+  // Load profile data
   useEffect(() => {
-    loadProfile();
+    const load = async () => {
+      try {
+        const res = await fetch("/api/profile/full");
+        const data = await res.json();
+        setProfile(data);
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      }
+      setLoading(false);
+    };
+
+    load();
   }, []);
+
+  const saveSection = async (section: string, data: any) => {
+    await fetch(`/api/profile/sections/${section}`, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  };
 
   if (loading) {
     return (
@@ -59,227 +51,350 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-12">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Organization Profile</h1>
+    <div className="min-h-screen bg-gray-50 px-6 py-10">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-semibold text-gray-900">Organization Profile</h1>
+        <p className="text-gray-600 mt-2">
+          Update your organization information at any time.
+        </p>
 
-        {saving && (
-          <div className="mb-4 text-sm text-blue-600">Saving changes…</div>
-        )}
+        <div className="mt-10 space-y-10">
 
-        {/* BASIC INFO */}
-        <ProfileSection
-          title="Basic Information"
-          description="Tell us about your organization."
-        >
-          <input
-            type="text"
-            placeholder="Organization Name"
-            defaultValue={profile.organizationName || ""}
-            onChange={(e) =>
-              saveSection("basic", { organizationName: e.target.value })
-            }
-            className="w-full border rounded-lg p-2"
-          />
+          {/* ---------------------- BASICS ---------------------- */}
+          <section className="bg-white p-6 rounded-xl shadow border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Organization Basics</h2>
 
-          <input
-            type="text"
-            placeholder="Organization Type (nonprofit, gov, etc.)"
-            defaultValue={profile.organizationType || ""}
-            onChange={(e) =>
-              saveSection("basic", { organizationType: e.target.value })
-            }
-            className="w-full border rounded-lg p-2"
-          />
+            <div className="space-y-4">
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Organization Name"
+                value={profile.basics.name}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    basics: { ...profile.basics, name: e.target.value }
+                  })
+                }
+              />
 
-          <textarea
-            placeholder="Mission Statement"
-            defaultValue={profile.mission || ""}
-            onChange={(e) => saveSection("basic", { mission: e.target.value })}
-            className="w-full border rounded-lg p-2 h-24"
-          />
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Organization Type"
+                value={profile.basics.type}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    basics: { ...profile.basics, type: e.target.value }
+                  })
+                }
+              />
 
-          <input
-            type="text"
-            placeholder="Website"
-            defaultValue={profile.website || ""}
-            onChange={(e) => saveSection("basic", { website: e.target.value })}
-            className="w-full border rounded-lg p-2"
-          />
-        </ProfileSection>
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Website"
+                value={profile.basics.website}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    basics: { ...profile.basics, website: e.target.value }
+                  })
+                }
+              />
 
-        {/* LOCATION */}
-        <ProfileSection
-          title="Location"
-          description="Where is your organization based?"
-        >
-          <input
-            type="text"
-            placeholder="Country"
-            defaultValue={profile.country || ""}
-            onChange={(e) =>
-              saveSection("location", { country: e.target.value })
-            }
-            className="w-full border rounded-lg p-2"
-          />
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="EIN"
+                value={profile.basics.ein}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    basics: { ...profile.basics, ein: e.target.value }
+                  })
+                }
+              />
+            </div>
 
-          <input
-            type="text"
-            placeholder="State"
-            defaultValue={profile.state || ""}
-            onChange={(e) => saveSection("location", { state: e.target.value })}
-            className="w-full border rounded-lg p-2"
-          />
+            <button
+              onClick={() => saveSection("basic", profile.basics)}
+              className="mt-6 px-6 py-2 rounded-lg border border-yellow-400 text-yellow-600 bg-white hover:bg-yellow-50 transition"
+            >
+              Save Basics
+            </button>
+          </section>
 
-          <input
-            type="text"
-            placeholder="City"
-            defaultValue={profile.city || ""}
-            onChange={(e) => saveSection("location", { city: e.target.value })}
-            className="w-full border rounded-lg p-2"
-          />
-        </ProfileSection>
+          {/* ---------------------- LOCATION ---------------------- */}
+          <section className="bg-white p-6 rounded-xl shadow border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Location</h2>
 
-        {/* CAPACITY */}
-        <ProfileSection
-          title="Organizational Capacity"
-          description="Tell us about your size and experience."
-        >
-          <input
-            type="number"
-            placeholder="Staff Size"
-            defaultValue={profile.staffSize || ""}
-            onChange={(e) =>
-              saveSection("capacity", { staffSize: Number(e.target.value) })
-            }
-            className="w-full border rounded-lg p-2"
-          />
+            <div className="space-y-4">
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="State"
+                value={profile.location.state}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    location: { ...profile.location, state: e.target.value }
+                  })
+                }
+              />
 
-          <input
-            type="number"
-            placeholder="Annual Budget"
-            defaultValue={profile.annualBudget || ""}
-            onChange={(e) =>
-              saveSection("capacity", { annualBudget: Number(e.target.value) })
-            }
-            className="w-full border rounded-lg p-2"
-          />
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="County"
+                value={profile.location.county}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    location: { ...profile.location, county: e.target.value }
+                  })
+                }
+              />
+            </div>
 
-          <input
-            type="text"
-            placeholder="Grant Experience (beginner, intermediate, advanced)"
-            defaultValue={profile.grantExperience || ""}
-            onChange={(e) =>
-              saveSection("capacity", { grantExperience: e.target.value })
-            }
-            className="w-full border rounded-lg p-2"
-          />
-        </ProfileSection>
+            <button
+              onClick={() => saveSection("location", profile.location)}
+              className="mt-6 px-6 py-2 rounded-lg border border-yellow-400 text-yellow-600 bg-white hover:bg-yellow-50 transition"
+            >
+              Save Location
+            </button>
+          </section>
 
-        {/* PROGRAM AREAS */}
-        <ProfileSection
-          title="Program Areas"
-          description="What does your organization focus on?"
-        >
-          <input
-            type="text"
-            placeholder="Focus Areas (comma separated)"
-            defaultValue={profile.focusAreas?.join(", ") || ""}
-            onChange={(e) =>
-              saveSection("programs", {
-                focusAreas: e.target.value.split(",").map((s) => s.trim()),
-              })
-            }
-            className="w-full border rounded-lg p-2"
-          />
+          {/* ---------------------- MISSION ---------------------- */}
+          <section className="bg-white p-6 rounded-xl shadow border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Mission & Focus Areas</h2>
 
-          <input
-            type="text"
-            placeholder="Populations Served (comma separated)"
-            defaultValue={profile.populationsServed?.join(", ") || ""}
-            onChange={(e) =>
-              saveSection("programs", {
-                populationsServed: e.target.value
-                  .split(",")
-                  .map((s) => s.trim()),
-              })
-            }
-            className="w-full border rounded-lg p-2"
-          />
+            <input
+              className="w-full border rounded-lg px-3 py-2 mb-4"
+              placeholder="Mission Category"
+              value={profile.mission.category}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  mission: { ...profile.mission, category: e.target.value }
+                })
+              }
+            />
 
-          <input
-            type="text"
-            placeholder="Geographic Service Area (comma separated)"
-            defaultValue={profile.geographicService?.join(", ") || ""}
-            onChange={(e) =>
-              saveSection("programs", {
-                geographicService: e.target.value
-                  .split(",")
-                  .map((s) => s.trim()),
-              })
-            }
-            className="w-full border rounded-lg p-2"
-          />
-        </ProfileSection>
+            <textarea
+              className="w-full border rounded-lg px-3 py-2 h-24"
+              placeholder="Focus Areas (comma separated)"
+              value={profile.mission.focusAreas.join(", ")}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  mission: {
+                    ...profile.mission,
+                    focusAreas: e.target.value.split(",").map((x) => x.trim())
+                  }
+                })
+              }
+            />
 
-        {/* HISTORY */}
-        <ProfileSection
-          title="Grant History"
-          description="Tell us about your past grant performance."
-        >
-          <textarea
-            placeholder="Past Grants"
-            defaultValue={profile.pastGrants || ""}
-            onChange={(e) =>
-              saveSection("history", { pastGrants: e.target.value })
-            }
-            className="w-full border rounded-lg p-2 h-24"
-          />
+            <button
+              onClick={() => saveSection("programs", profile.mission)}
+              className="mt-6 px-6 py-2 rounded-lg border border-yellow-400 text-yellow-600 bg-white hover:bg-yellow-50 transition"
+            >
+              Save Mission
+            </button>
+          </section>
 
-          <input
-            type="number"
-            placeholder="Past Wins"
-            defaultValue={profile.pastWins || ""}
-            onChange={(e) =>
-              saveSection("history", { pastWins: Number(e.target.value) })
-            }
-            className="w-full border rounded-lg p-2"
-          />
+          {/* ---------------------- CAPACITY ---------------------- */}
+          <section className="bg-white p-6 rounded-xl shadow border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Capacity & Readiness</h2>
 
-          <input
-            type="number"
-            placeholder="Past Losses"
-            defaultValue={profile.pastLosses || ""}
-            onChange={(e) =>
-              saveSection("history", { pastLosses: Number(e.target.value) })
-            }
-            className="w-full border rounded-lg p-2"
-          />
-        </ProfileSection>
+            <div className="space-y-4">
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Staff Size"
+                value={profile.capacity.staffSize}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    capacity: { ...profile.capacity, staffSize: e.target.value }
+                  })
+                }
+              />
 
-        {/* STRATEGY */}
-        <ProfileSection
-          title="Strategic Priorities"
-          description="Help us understand your long-term goals."
-        >
-          <textarea
-            placeholder="Strategic Goals"
-            defaultValue={profile.strategicGoals || ""}
-            onChange={(e) =>
-              saveSection("strategy", { strategicGoals: e.target.value })
-            }
-            className="w-full border rounded-lg p-2 h-24"
-          />
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Annual Budget"
+                value={profile.capacity.annualBudget}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    capacity: { ...profile.capacity, annualBudget: e.target.value }
+                  })
+                }
+              />
 
-          <textarea
-            placeholder="Priority Areas"
-            defaultValue={profile.priorityAreas || ""}
-            onChange={(e) =>
-              saveSection("strategy", { priorityAreas: e.target.value })
-            }
-            className="w-full border rounded-lg p-2 h-24"
-          />
-        </ProfileSection>
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Readiness Level"
+                value={profile.capacity.readiness}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    capacity: { ...profile.capacity, readiness: e.target.value }
+                  })
+                }
+              />
+
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Past Grant Experience"
+                value={profile.capacity.pastGrants}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    capacity: { ...profile.capacity, pastGrants: e.target.value }
+                  })
+                }
+              />
+            </div>
+
+            <button
+              onClick={() => saveSection("capacity", profile.capacity)}
+              className="mt-6 px-6 py-2 rounded-lg border border-yellow-400 text-yellow-600 bg-white hover:bg-yellow-50 transition"
+            >
+              Save Capacity
+            </button>
+          </section>
+
+          {/* ---------------------- FUNDING ---------------------- */}
+          <section className="bg-white p-6 rounded-xl shadow border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Funding Needs</h2>
+
+            <div className="space-y-4">
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Funding Amount"
+                value={profile.funding.amount}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    funding: { ...profile.funding, amount: e.target.value }
+                  })
+                }
+              />
+
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Purpose"
+                value={profile.funding.purpose}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    funding: { ...profile.funding, purpose: e.target.value }
+                  })
+                }
+              />
+
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Timeline"
+                value={profile.funding.timeline}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    funding: { ...profile.funding, timeline: e.target.value }
+                  })
+                }
+              />
+
+              <input
+                className="w-full border rounded-lg px-3 py-2"
+                placeholder="Urgency"
+                value={profile.funding.urgency}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    funding: { ...profile.funding, urgency: e.target.value }
+                  })
+                }
+              />
+            </div>
+
+            <button
+              onClick={() => saveSection("strategy", profile.funding)}
+              className="mt-6 px-6 py-2 rounded-lg border border-yellow-400 text-yellow-600 bg-white hover:bg-yellow-50 transition"
+            >
+              Save Funding
+            </button>
+          </section>
+
+          {/* ---------------------- ELIGIBILITY ---------------------- */}
+          <section className="bg-white p-6 rounded-xl shadow border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4">Eligibility Filters</h2>
+
+            <textarea
+              className="w-full border rounded-lg px-3 py-2 h-24 mb-4"
+              placeholder="Populations Served (comma separated)"
+              value={profile.eligibility.populations.join(", ")}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  eligibility: {
+                    ...profile.eligibility,
+                    populations: e.target.value.split(",").map((x) => x.trim())
+                  }
+                })
+              }
+            />
+
+            <input
+              className="w-full border rounded-lg px-3 py-2 mb-4"
+              placeholder="Organization Type"
+              value={profile.eligibility.orgType}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  eligibility: {
+                    ...profile.eligibility,
+                    orgType: e.target.value
+                  }
+                })
+              }
+            />
+
+            <input
+              className="w-full border rounded-lg px-3 py-2 mb-4"
+              placeholder="Geographic Eligibility"
+              value={profile.eligibility.geoEligibility}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  eligibility: {
+                    ...profile.eligibility,
+                    geoEligibility: e.target.value
+                  }
+                })
+              }
+            />
+
+            <textarea
+              className="w-full border rounded-lg px-3 py-2 h-24"
+              placeholder="Restrictions"
+              value={profile.eligibility.restrictions}
+              onChange={(e) =>
+                setProfile({
+                  ...profile,
+                  eligibility: {
+                    ...profile.eligibility,
+                    restrictions: e.target.value
+                  }
+                })
+              }
+            />
+
+            <button
+              onClick={() => saveSection("history", profile.eligibility)}
+              className="mt-6 px-6 py-2 rounded-lg border border-yellow-400 text-yellow-600 bg-white hover:bg-yellow-50 transition"
+            >
+              Save Eligibility
+            </button>
+          </section>
+        </div>
       </div>
     </div>
   );

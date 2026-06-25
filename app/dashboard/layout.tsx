@@ -60,6 +60,14 @@ export default function DashboardLayout({
           >
             Jobs
           </Link>
+
+          {/* ⭐ Billing Link */}
+          <Link
+            href="/billing"
+            className="block text-gray-700 hover:text-brandBlue font-medium"
+          >
+            Billing
+          </Link>
         </nav>
       </aside>
 

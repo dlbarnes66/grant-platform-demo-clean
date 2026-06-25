@@ -1,65 +1,84 @@
-/* --------------------------------------------- */
-/*  TAILWIND LAYERS (v4 syntax)                  */
-/* --------------------------------------------- */
-@import "tailwindcss";
-@import "tailwindcss/preflight";
-@import "tailwindcss/utilities";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* --------------------------------------------- */
-/*  GLOBAL THEME COLORS                          */
-/* --------------------------------------------- */
-:root {
-  --brand-blue: #1e40af;
-  --brand-gold: #fbbf24;
-  --brand-light: #f8fafc;
+/* ----------------------------------------
+   GLOBAL THEME — GrantScout Pro
+   Clean, modern, premium SaaS styling
+----------------------------------------- */
+
+/* Smooth font rendering */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Utility classes for your theme */
-.bg-brandBlue {
-  background-color: var(--brand-blue);
-}
-
-.text-brandBlue {
-  color: var(--brand-blue);
-}
-
-.bg-brandGold {
-  background-color: var(--brand-gold);
-}
-
-.text-brandGold {
-  color: var(--brand-gold);
-}
-
-.bg-brandLight {
-  background-color: var(--brand-light);
-}
-
-/* --------------------------------------------- */
-/*  ANIMATIONS (Modal, Sidebar, etc.)            */
-/* --------------------------------------------- */
-@keyframes fadeIn {
-  from { opacity: 0 }
-  to { opacity: 1 }
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.95) }
-  to { opacity: 1; transform: scale(1) }
-}
-
-.animate-fadeIn {
-  animation: fadeIn 0.2s ease-out forwards;
-}
-
-.animate-scaleIn {
-  animation: scaleIn 0.2s ease-out forwards;
-}
-
-/* --------------------------------------------- */
-/*  OPTIONAL GLOBAL RESETS                       */
-/* --------------------------------------------- */
+/* Global background */
 body {
-  background-color: var(--brand-light);
-  font-family: system-ui, sans-serif;
+  @apply bg-gray-100 text-gray-900;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+  @apply font-semibold text-gray-900;
+}
+
+/* Buttons — unified system */
+.btn {
+  @apply px-5 py-3 rounded-lg font-medium shadow-sm transition;
+}
+
+.btn-primary {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+}
+
+.btn-success {
+  @apply bg-green-600 text-white hover:bg-green-700;
+}
+
+.btn-warning {
+  @apply bg-yellow-500 text-white hover:bg-yellow-600;
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}
+
+/* Cards */
+.card {
+  @apply bg-white border rounded-xl shadow-sm p-6;
+}
+
+/* Inputs */
+.input {
+  @apply p-3 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none;
+}
+
+/* Textareas */
+.textarea {
+  @apply p-4 border rounded-lg bg-white shadow-sm leading-relaxed focus:ring-2 focus:ring-blue-500 focus:outline-none;
+}
+
+/* Section titles */
+.section-title {
+  @apply text-xl font-semibold text-gray-900 mt-10 mb-3;
+}
+
+/* Subtle text */
+.text-muted {
+  @apply text-gray-500;
+}
+
+/* Hover card */
+.hover-card {
+  @apply transition hover:shadow-md hover:bg-gray-50;
+}
+
+/* Smooth transitions everywhere */
+* {
+  @apply transition-colors duration-150;
 }

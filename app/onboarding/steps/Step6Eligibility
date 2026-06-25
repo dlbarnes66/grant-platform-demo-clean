@@ -1,0 +1,51 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function Step6Eligibility() {
+  const router = useRouter();
+
+  const [populationsServed, setPopulationsServed] = useState("");
+  const [geographicService, setGeographicService] = useState("");
+
+  const save = async () => {
+    await fetch("/api/onboarding", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: "test-user-id",
+        populationsServed: populationsServed.split(",").map((s) => s.trim()),
+        geographicService: geographicService.split(",").map((s) => s.trim()),
+      }),
+    });
+
+    router.push("/dashboard");
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold">Eligibility</h2>
+
+      <input
+        className="w-full border p-3 rounded"
+        placeholder="Populations Served (comma separated)"
+        value={populationsServed}
+        onChange={(e) => setPopulationsServed(e.target.value)}
+      />
+
+      <input
+        className="w-full border p-3 rounded"
+        placeholder="Geographic Service Areas (comma separated)"
+        value={geographicService}
+        onChange={(e) => setGeographicService(e.target.value)}
+      />
+
+      <button
+        onClick={save}
+        className="px-6 py-3 bg-green-600 text-white rounded"
+      >
+        Finish
+      </button>
+    </div>
+  );
+}

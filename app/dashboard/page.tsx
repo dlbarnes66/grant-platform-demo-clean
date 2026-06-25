@@ -4,117 +4,154 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    queued: 0,
-    processing: 0,
-    completed: 0,
-    failed: 0,
-  });
+  const [orgName, setOrgName] = useState("");
+  const [loadingMatches, setLoadingMatches] = useState(false);
+  const [matches, setMatches] = useState([]);
 
-  async function fetchJobs() {
-    const res = await fetch("/api/jobs");
-    if (res.ok) {
-      const data = await res.json();
-      setJobs(data.jobs);
-
-      setStats({
-        total: data.jobs.length,
-        queued: data.jobs.filter((j: any) => j.status === "queued").length,
-        processing: data.jobs.filter((j: any) => j.status === "processing").length,
-        completed: data.jobs.filter((j: any) => j.status === "completed").length,
-        failed: data.jobs.filter((j: any) => j.status === "failed").length,
-      });
-    }
-  }
-
+  // Load profile basics
   useEffect(() => {
-    fetchJobs();
-    const interval = setInterval(fetchJobs, 2000);
-    return () => clearInterval(interval);
+    const loadProfile = async () => {
+      try {
+        const res = await fetch("/api/profile");
+        const data = await res.json();
+        setOrgName(data?.name || "Your Organization");
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      }
+    };
+
+    loadProfile();
   }, []);
 
+  // Load AI grant matches
+  const loadMatches = async () => {
+    setLoadingMatches(true);
+
+    const res = await fetch("/api/match-grants", {
+      method: "POST",
+      body: JSON.stringify({ userId: "test-user-id" }), // Replace with real user ID later
+    });
+
+    const data = await res.json();
+    setMatches(data.grants || []);
+    setLoadingMatches(false);
+  };
+
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard Overview</h1>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Total Jobs" value={stats.total} />
-        <StatCard label="Queued" value={stats.queued} />
-        <StatCard label="Processing" value={stats.processing} />
-        <StatCard label="Completed" value={stats.completed} />
-        <StatCard label="Failed" value={stats.failed} />
+    <div className="min-h-screen bg-gray-50 px-6 py-10">
+      {/* Header */}
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-3xl font-semibold text-gray-900">
+          Welcome, {orgName}
+        </h1>
+        <p className="text-gray-600 mt-2">
+          Your personalized grant dashboard is ready.
+        </p>
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-4">
+      {/* Main CTA */}
+      <div className="max-w-5xl mx-auto mt-10">
         <Link
-          href="/dashboard/search"
-          className="px-4 py-2 bg-blue-600 text-white rounded"
+          href="/search"
+          className="block w-full bg-white border border-yellow-400 text-yellow-600 text-center py-4 rounded-xl shadow hover:bg-yellow-50 transition text-lg font-medium"
         >
-          Create New Job
-        </Link>
-
-        <Link
-          href="/dashboard/jobs"
-          className="px-4 py-2 bg-gray-700 text-white rounded"
-        >
-          View All Jobs
+          Start Your First Grant Search
         </Link>
       </div>
 
-      {/* Recent Jobs */}
-      <div className="border rounded bg-white">
-        <h2 className="p-4 font-semibold border-b">Recent Jobs</h2>
+      {/* Quick Actions */}
+      <div className="max-w-5xl mx-auto mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Link
+          href="/profile"
+          className="bg-white p-6 rounded-xl shadow border border-gray-200 hover:bg-gray-50 transition"
+        >
+          <h3 className="text-lg font-semibold text-gray-900">Edit Profile</h3>
+          <p className="text-gray-600 mt-1 text-sm">
+            Update your organization details
+          </p>
+        </Link>
 
-        {jobs.length === 0 && (
-          <div className="p-4 text-gray-600">No jobs yet.</div>
-        )}
+        <Link
+          href="/saved-searches"
+          className="bg-white p-6 rounded-xl shadow border border-gray-200 hover:bg-gray-50 transition"
+        >
+          <h3 className="text-lg font-semibold text-gray-900">Saved Searches</h3>
+          <p className="text-gray-600 mt-1 text-sm">
+            View your saved grant searches
+          </p>
+        </Link>
 
-        {jobs.slice(0, 5).map((job) => (
-          <Link
-            key={job.id}
-            href={`/dashboard/jobs/${job.id}`}
-            className="block p-4 hover:bg-gray-50 border-b last:border-none"
-          >
-            <div className="flex justify-between">
-              <div>
-                <div className="font-medium">{job.text.slice(0, 60)}…</div>
-                <div className="text-sm text-gray-600">
-                  {new Date(job.createdAt).toLocaleString()}
-                </div>
-              </div>
+        <Link
+          href="/saved-grants"
+          className="bg-white p-6 rounded-xl shadow border border-gray-200 hover:bg-gray-50 transition"
+        >
+          <h3 className="text-lg font-semibold text-gray-900">Saved Grants</h3>
+          <p className="text-gray-600 mt-1 text-sm">
+            Grants you’ve bookmarked
+          </p>
+        </Link>
 
-              <span
-                className={`px-3 py-1 rounded text-white ${
-                  job.status === "queued"
-                    ? "bg-gray-500"
-                    : job.status === "processing"
-                    ? "bg-yellow-500"
-                    : job.status === "completed"
-                    ? "bg-green-600"
-                    : job.status === "failed"
-                    ? "bg-red-600"
-                    : "bg-gray-400"
-                }`}
-              >
-                {job.status}
-              </span>
+        <Link
+          href="/history"
+          className="bg-white p-6 rounded-xl shadow border border-gray-200 hover:bg-gray-50 transition"
+        >
+          <h3 className="text-lg font-semibold text-gray-900">Search History</h3>
+          <p className="text-gray-600 mt-1 text-sm">
+            Review your past activity
+          </p>
+        </Link>
+      </div>
+
+      {/* AI Grant Matching */}
+      <div className="max-w-5xl mx-auto mt-16">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          AI‑Powered Grant Recommendations
+        </h2>
+        <p className="text-gray-600 mt-1">
+          Based on your onboarding profile
+        </p>
+
+        <button
+          onClick={loadMatches}
+          disabled={loadingMatches}
+          className="mt-6 px-6 py-3 bg-brandBlue text-white rounded-lg shadow hover:bg-brandBlue/90 transition"
+        >
+          {loadingMatches ? "Loading Recommendations..." : "Generate Recommendations"}
+        </button>
+
+        {/* Results */}
+        <div className="mt-8 space-y-6">
+          {matches.map((g: any, i: number) => (
+            <div
+              key={i}
+              className="bg-white border border-gray-200 rounded-xl p-6 shadow"
+            >
+              <h3 className="text-xl font-semibold text-gray-900">{g.name}</h3>
+              <p className="text-gray-600">{g.funder}</p>
+
+              <p className="mt-2 text-sm text-gray-700">
+                <strong>Amount:</strong> {g.amountRange}  
+                <br />
+                <strong>Deadline:</strong> {g.deadline}
+              </p>
+
+              <p className="mt-3 text-gray-800">
+                <strong>Why it matches:</strong> {g.whyItMatches}
+              </p>
+
+              <p className="mt-2 text-sm text-gray-600">
+                <strong>Eligibility:</strong> {g.keyEligibilityPoints}
+              </p>
             </div>
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
+          ))}
 
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="p-4 border rounded text-center bg-white shadow-sm">
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="text-gray-600">{label}</div>
+          {matches.length === 0 && !loadingMatches && (
+            <div className="mt-6 bg-white border border-gray-200 rounded-xl p-6 shadow text-gray-500 text-center">
+              No recommendations yet. Click the button above to generate AI‑powered matches.
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

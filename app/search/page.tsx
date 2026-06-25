@@ -1,151 +1,119 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const [history, setHistory] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [savedMessage, setSavedMessage] = useState("");
 
-  async function fetchHistory() {
-    const res = await fetch("/api/search-history", {
-      credentials: "include",
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      setHistory(data.history || []);
-    }
-  }
-
-  async function submitSearch(e) {
-    e.preventDefault();
+  const runSearch = async () => {
     if (!query.trim()) return;
 
     setLoading(true);
 
-    const res = await fetch("/api/jobs", {
+    const res = await fetch("/api/search", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: query }),
-      credentials: "include",
+      body: JSON.stringify({ query }),
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      window.location.href = `/jobs/${data.jobId}`;
-    } else {
-      console.error("Search failed:", await res.text());
-      setLoading(false);
-    }
-  }
-
-  async function saveSearch() {
-    if (!query.trim()) return;
-
-    setSaving(true);
-
-    const res = await fetch("/api/saved-searches", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        name: query,
-        query,
-      }),
-    });
-
-    if (res.ok) {
-      setSavedMessage("Saved!");
-      setTimeout(() => setSavedMessage(""), 2000);
-    } else {
-      console.error("Failed to save search");
-    }
-
-    setSaving(false);
-  }
-
-  useEffect(() => {
-    fetchHistory();
-  }, []);
+    const data = await res.json();
+    setResults(data.results || []);
+    setLoading(false);
+  };
 
   return (
-    <div className="min-h-screen px-6 py-12 bg-gray-50">
-      <h1 className="text-4xl font-bold text-center mb-10">
-        AI Grant Search
-      </h1>
-
-      {/* Search Bar */}
-      <form
-        onSubmit={submitSearch}
-        className="max-w-2xl mx-auto flex gap-3 mb-6"
-      >
-        <input
-          type="text"
-          placeholder="Search for grants, keywords, agencies..."
-          className="flex-1 px-4 py-3 border rounded-lg shadow-sm"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`px-6 py-3 rounded-lg shadow text-white font-semibold transition ${
-            loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"
-          }`}
-        >
-          {loading ? "Searching..." : "Search"}
-        </button>
-      </form>
-
-      {/* Save Search Button */}
-      <div className="max-w-2xl mx-auto flex justify-end mb-10">
-        <button
-          onClick={saveSearch}
-          disabled={saving || !query.trim()}
-          className={`px-4 py-2 rounded-lg text-white font-medium transition ${
-            saving || !query.trim()
-              ? "bg-gray-400"
-              : "bg-green-600 hover:bg-green-700"
-          }`}
-        >
-          {saving ? "Saving..." : "Save Search"}
-        </button>
-      </div>
-
-      {/* Saved Message */}
-      {savedMessage && (
-        <p className="text-center text-green-600 font-medium mb-6">
-          {savedMessage}
+    <div className="min-h-screen bg-gray-100 px-6 py-10">
+      <div className="max-w-5xl mx-auto">
+        {/* Page Title */}
+        <h1 className="text-3xl font-bold text-gray-900">Grant Search</h1>
+        <p className="text-gray-600 mt-2">
+          Search for grants and explore opportunities that match your mission.
         </p>
-      )}
 
-      {/* Search History */}
-      <div className="max-w-2xl mx-auto">
-        <h2 className="text-xl font-semibold mb-4">Recent Searches</h2>
+        {/* Search Bar */}
+        <div className="mt-8 flex gap-3">
+          <input
+            type="text"
+            placeholder="Search grants…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="flex-1 p-4 border rounded-lg bg-white shadow-sm"
+          />
+          <button
+            onClick={runSearch}
+            disabled={loading}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition"
+          >
+            {loading ? "Searching…" : "Search"}
+          </button>
+        </div>
 
-        {history.length === 0 ? (
-          <p className="text-gray-600">No recent searches.</p>
-        ) : (
-          <div className="space-y-3">
-            {history.map((item) => (
-              <Link
-                key={item.id}
-                href={`/jobs/${item.jobId}`}
-                className="block p-4 border rounded-lg bg-white hover:bg-gray-50 transition"
+        {/* Results */}
+        <div className="mt-10">
+          {loading && (
+            <p className="text-gray-600 text-lg">Searching for grants…</p>
+          )}
+
+          {!loading && results.length === 0 && (
+            <p className="text-gray-500 mt-4">No results yet. Try a search.</p>
+          )}
+
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {results.map((grant) => (
+              <div
+                key={grant.id}
+                className="bg-white border rounded-xl shadow-sm p-6 hover:shadow-md transition"
               >
-                <div className="font-medium">{item.query}</div>
-                <div className="text-sm text-gray-600">
-                  {new Date(item.createdAt).toLocaleString()}
+                {/* Title */}
+                <h2 className="text-lg font-semibold text-gray-900 leading-tight">
+                  {grant.title}
+                </h2>
+
+                {/* Agency */}
+                {grant.agency && (
+                  <p className="text-sm text-gray-600 mt-1">{grant.agency}</p>
+                )}
+
+                {/* Metadata */}
+                <div className="mt-4 space-y-1 text-sm text-gray-700">
+                  <p>
+                    <span className="font-semibold">Amount:</span>{" "}
+                    {grant.amount || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Deadline:</span>{" "}
+                    {grant.deadline || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Category:</span>{" "}
+                    {grant.category || "N/A"}
+                  </p>
                 </div>
-              </Link>
+
+                {/* Summary */}
+                <p className="mt-4 text-gray-700 text-sm leading-relaxed line-clamp-4">
+                  {grant.summary || "No summary available."}
+                </p>
+
+                {/* View Details Button */}
+                <button
+                  onClick={() => (window.location.href = `/grants/${grant.id}`)}
+                  className="mt-6 w-full px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition"
+                >
+                  View Details
+                </button>
+              </div>
             ))}
           </div>
-        )}
+        </div>
+
+        {/* Back Link */}
+        <div className="mt-10">
+          <a href="/" className="text-gray-600 underline">
+            ← Back to Home
+          </a>
+        </div>
       </div>
     </div>
   );

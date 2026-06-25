@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
   const { id } = await req.json();
 
-  await prisma.savedSearch.delete({
+  await prisma.savedGrant.delete({
     where: { id },
   });
 

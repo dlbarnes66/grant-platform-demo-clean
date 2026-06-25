@@ -14,6 +14,7 @@ interface GrantCardProps {
   deadline?: string;
   category?: string;
   url?: string;
+  whyItMatches?: string; // ⭐ NEW FIELD
   onSave?: () => void;
   onCompare?: () => void;
   saved?: boolean;
@@ -28,6 +29,7 @@ export default function GrantCard({
   deadline,
   category,
   url,
+  whyItMatches,
   onSave,
   onCompare,
   saved = false,
@@ -47,6 +49,13 @@ export default function GrantCard({
       {/* Summary */}
       <p className="text-gray-700 line-clamp-3">{summary}</p>
 
+      {/* ⭐ WHY IT MATCHES (AI SEARCH ONLY) */}
+      {whyItMatches && (
+        <p className="mt-3 text-sm text-purple-700 bg-purple-50 p-3 rounded-md border border-purple-200">
+          <span className="font-semibold">Why it matches:</span> {whyItMatches}
+        </p>
+      )}
+
       {/* Details */}
       <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
         {amount && (
@@ -65,22 +74,12 @@ export default function GrantCard({
 
       <CardFooter className="flex items-center justify-between mt-6">
         {/* View Button */}
-        {url ? (
-          <Link
-            href={url}
-            target="_blank"
-            className="text-brandBlue font-medium hover:underline"
-          >
-            View Grant →
-          </Link>
-        ) : (
-          <Link
-            href={`/dashboard/grants/${id}`}
-            className="text-brandBlue font-medium hover:underline"
-          >
-            View Grant →
-          </Link>
-        )}
+        <Link
+          href={`/grants/${id}`} // ⭐ FIXED: Always use your new details page
+          className="text-brandBlue font-medium hover:underline"
+        >
+          View Grant →
+        </Link>
 
         {/* Actions */}
         <div className="flex items-center gap-3">
