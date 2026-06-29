@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: null,
 });
@@ -22,31 +25,22 @@ export async function POST(req: Request) {
     });
 
     if (user?.stripeCustomerId) {
-      return NextResponse.json({
-        customerId: user.stripeCustomerId,
-      });
+      return NextResponse.json({ customerId: user.stripeCustomerId });
     }
 
     const customer = await stripe.customers.create({
       email,
-      metadata: {
-        userId,
-      },
+      metadata: { userId },
     });
 
     await prisma.user.update({
       where: { id: userId },
-      data: {
-        stripeCustomerId: customer.id,
-      },
+      data: { stripeCustomerId: customer.id },
     });
 
     return NextResponse.json({ customerId: customer.id });
   } catch (err: any) {
     console.error("Create customer error:", err);
-    return NextResponse.json(
-      { error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
