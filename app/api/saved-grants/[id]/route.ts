@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(req, { params }) {
+export async function GET(
+  req: Request,
+  { params }: { params: { id: String } }
+) {
   try {
     const grant = await prisma.savedGrant.findUnique({
-      where: { id: params.id },
+      where: { id: params.id as string },
+      include: {
+        grant: true, // GrantPreview
+      },
     });
 
     if (!grant) {
@@ -14,6 +20,9 @@ export async function GET(req, { params }) {
     return NextResponse.json(grant);
   } catch (error) {
     console.error("Error fetching saved grant:", error);
-    return NextResponse.json({ error: "Failed to fetch saved grant" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch saved grant" },
+      { status: 500 }
+    );
   }
 }
