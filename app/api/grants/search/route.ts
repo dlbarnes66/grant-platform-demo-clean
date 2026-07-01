@@ -1,35 +1,94 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+import { openai } from "@/lib/openai";
 
 export async function POST(req: Request) {
   try {
-    const { query } = await req.json();
+    const { query, workspaceId } = await req.json();
 
-    if (!query || query.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Search query is required" },
-        { status: 400 }
-      );
-    }
-
-    const grants = await prisma.grant.findMany({
-      where: {
-        OR: [
-          { title: { contains: query, mode: "insensitive" } },
-          { description: { contains: query, mode: "insensitive" } },
-          { category: { contains: query, mode: "insensitive" } },
-        ],
-      },
-      orderBy: { deadline: "asc" },
-      take: 50,
+    // Fetch workspace context
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: {
+        name: true,
+        mission: true,
+        history: true
+      }
     });
 
-    return NextResponse.json({ grants });
-  } catch (err: any) {
-    console.error("Grant search error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    // 1. Fetch Federal Grants (Grants.gov)
+    const federalRes = await fetch(
+      `https://www.grants.gov/grantsws/rest/opportunities/search?keyword=${encodeURIComponent(
+        query
+      )}&limit=50`
+    );
+    const federalData = await federalRes.json();
+
+    // 2. Fetch State Grants (Firecrawl ingestion)
+    const stateRes = await fetch(
+      `https://api.firecrawl.dev/v1/scrape`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.FIRECRAWL_API_KEY}`
+        },
+        body: JSON.stringify({
+          url: `https://www.usa.gov/state-government`,
+          formats: ["markdown"]
+        })
+      }
+    );
+    const stateData = await stateRes.json();
+
+    // Combine raw results
+    const rawGrants = [
+      ...(federalData?.opportunities || []),
+      ...(stateData?.markdown ? [{ title: "State Grants", summary: stateData.markdown }] : [])
+    ];
+
+    // AI relevance scoring
+    const prompt = `
+You are an expert grant analyst. Score each grant based on relevance to this workspace:
+
+Workspace:
+- Name: ${workspace?.name}
+- Mission: ${workspace?.mission}
+- History: ${workspace?.history}
+
+User Query: ${query}
+
+Return ONLY valid JSON in this format:
+
+{
+  "results": [
+    {
+      "title": "Grant Title",
+      "summary": "Grant Summary",
+      "agency": "Agency Name",
+      "deadline": "Deadline",
+      "score": 0-100
+    }
+  ]
+}
+
+Grants to score:
+${JSON.stringify(rawGrants, null, 2)}
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.2,
+    });
+
+    const output = completion.choices[0].message.content;
+
+    return NextResponse.json(JSON.parse(output));
+  } catch (error) {
+    console.error("Grant Search Error:", error);
+    return NextResponse.json(
+      { error: "Grant search failed" },
+      { status: 500 }
+    );
   }
 }
