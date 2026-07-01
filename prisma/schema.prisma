@@ -46,6 +46,11 @@ model User {
 
   // Drafts
   grantDrafts      GrantDraft[]
+
+  // Batch 129 additions
+  narratives       Narrative[]
+  reports          Report[]
+  auditLogs        AuditLog[]
 }
 
 model Account {
@@ -141,6 +146,11 @@ model Workspace {
   members     WorkspaceMember[]
   invites     WorkspaceInvite[]
   comparisons GrantComparison[]
+
+  // Batch 129 additions
+  grants      Grant[]
+  budgets     Budget[]
+  reports     Report[]
 }
 
 model WorkspaceMember {
@@ -435,7 +445,7 @@ model IngestionLog {
 
 //
 // =========================
-// GRANT DRAFT MODEL (NEW)
+// GRANT DRAFT MODEL
 // =========================
 //
 
@@ -448,4 +458,73 @@ model GrantDraft {
   updatedAt DateTime @updatedAt
 
   user      User @relation(fields: [userId], references: [id])
+}
+
+//
+// =========================
+// BATCH 129 — NEW MODELS
+// =========================
+//
+
+model Grant {
+  id          String   @id @default(cuid())
+  workspaceId String
+  title       String
+  agency      String?
+  summary     String?
+  amount      Float?
+  deadline    DateTime?
+  url         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  narratives Narrative[]
+}
+
+model Narrative {
+  id        String   @id @default(cuid())
+  grantId   String
+  userId    String
+  section   String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  grant Grant @relation(fields: [grantId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+}
+
+model Budget {
+  id          String   @id @default(cuid())
+  workspaceId String
+  category    String
+  amount      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  title       String
+  content     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
 }
