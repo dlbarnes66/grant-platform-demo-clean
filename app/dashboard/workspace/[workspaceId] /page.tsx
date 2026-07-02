@@ -30,9 +30,15 @@ export default function WorkspaceDashboard({
 
   const { workspace, grants, upcomingDeadlines, ai } = data;
 
+  // ⭐ If workspace is locked → redirect to lock screen
+  if (workspace.isLocked) {
+    window.location.href = `/dashboard/workspace/${workspaceId}/locked`;
+    return null;
+  }
+
   return (
     <div className="space-y-8 p-6">
-      {/* ⭐ Trial Banner Added Here */}
+      {/* ⭐ Trial Banner */}
       <TrialBanner workspaceId={workspaceId} />
 
       <h1 className="text-3xl font-bold">{workspace.name} — Dashboard</h1>
